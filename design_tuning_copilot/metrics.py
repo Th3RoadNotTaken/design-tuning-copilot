@@ -36,3 +36,29 @@ def summarize_by_style(rows: list[dict]) -> dict[str, dict]:
             "avg_time_to_kill": average_time_to_kill(group),
         }
     return summary
+
+def build_report(rows: list[dict], targets: dict, enemy: dict, player: dict) -> dict:
+    ttk = average_time_to_kill(rows)
+    rate = success_rate(rows)
+    shared_rules = {key: value for key, value in player.items() if key != "styles"}
+    return {
+        "difficulty": targets["difficulty"],
+        "tunable": {
+            "enemy": enemy,
+            "player": shared_rules,
+        },
+        "read_only_player_styles": player["styles"],
+        "overall": {
+            "time_to_kill_s": {
+                "value": ttk,
+                "target": targets["time_to_kill_s"],
+                **check_against_target(ttk, targets["time_to_kill_s"]),
+            },
+            "success_rate": {
+                "value": rate,
+                "target": targets["success_rate"],
+                **check_against_target(rate, targets["success_rate"]),
+            },
+        },
+        "by_style": summarize_by_style(rows),
+    }
