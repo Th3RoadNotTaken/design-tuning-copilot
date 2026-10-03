@@ -73,3 +73,9 @@ def parse_suggestions(text: str, allowed: set[str]) -> list[dict]:
     if problems:
         raise ValueError("; ".join(problems))
     return suggestions
+
+def suggest_changes(report: dict) -> list[dict]:
+    allowed = allowed_parameters(report)
+    prompt = build_prompt(report, allowed)
+    reply = ask_for_suggestions(prompt)
+    return parse_suggestions(reply, allowed)
