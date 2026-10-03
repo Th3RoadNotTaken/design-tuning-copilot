@@ -2,7 +2,8 @@
   "enemy": "brute",
   "health": 400,
   "damage": 25,
-  "attack_cooldown_s": 2.5,
+  "approach_min_s": 0.0,
+  "approach_max_s": 4.0,
   "windup_s": 0.8,
   "recovery_s": 1.2
 }
