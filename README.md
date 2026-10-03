@@ -1,4 +1,4 @@
-\# Design Tuning Copilot
+# Design Tuning Copilot
 
 
 
@@ -10,7 +10,7 @@ reasons, then re-simulates to show before and after.
 
 
 
-\## Status
+## Status
 
 
 
@@ -18,7 +18,7 @@ Work in progress. All data in this repo is simulated.
 
 
 
-\## What the AI part does and doesn't do
+## What the AI part does and doesn't do
 
 
 
