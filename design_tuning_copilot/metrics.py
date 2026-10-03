@@ -25,3 +25,14 @@ def group_by_style(rows: list[dict]) -> dict[str, list[dict]]:
     for row in rows:
         groups.setdefault(row["player_style"], []).append(row)
     return groups
+
+def summarize_by_style(rows: list[dict]) -> dict[str, dict]:
+    summary = {}
+    for name, group in group_by_style(rows).items():
+        summary[name] = {
+            "fights": len(group),
+            "wins": win_count(group),
+            "success_rate": success_rate(group),
+            "avg_time_to_kill": average_time_to_kill(group),
+        }
+    return summary
