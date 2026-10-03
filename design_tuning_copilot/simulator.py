@@ -24,13 +24,48 @@ def build_enemy_schedule(tunables: dict, fight_length_s: float, rng: random.Rand
         })
         time_s = recovery_end
 
-def simulate_fight(tunables: dict, style: dict, max_time_s: float = 120.0) -> float:
+def enemy_phase_at(time_s: float, schedule: list[dict]) -> str:
+    for attack in schedule:
+        if attack["windup_start"] <= time_s < attack["strike_time"]:
+            return "windup"
+        if attack["strike_time"] <= time_s < attack["recovery_end"]:
+            return "recovery"
+    return "approach"
+
+def pick_attack_phase(weights: dict, rng: random.Random) -> str:
+    return rng.choices(list(weights), weights=list(weights.values()))[0]
+
+def simulate_fight(
+    tunables: dict,
+    player_max_health: int,
+    style: dict,
+    rng: random.Random,
+    max_time_s: float = 120.0,
+) -> dict:
+    schedule = build_enemy_schedule(tunables, max_time_s, rng)
     enemy_health = tunables["health"]
+    player_health = player_max_health
+    damage_taken = 0
+    next_strike = 0
     time_s = 0.0
-    next_attack_s = 0.0
-    while enemy_health > 0 and time_s < max_time_s:
-        if time_s >= next_attack_s:
-            enemy_health -= style["damage_per_hit"]
-            next_attack_s += style["attack_interval_s"]
+    next_attack_time_s = 0.0
+    target_phase = None
+    while enemy_health > 0 and player_health > 0 and time_s < max_time_s:
+        if time_s >= next_attack_time_s:
+            if target_phase is None:
+                target_phase = pick_attack_phase(style["attack_phase_weights"], rng)
+            if enemy_phase_at(time_s, schedule) == target_phase:
+                enemy_health -= style["damage_per_hit"]
+                next_attack_time_s = time_s + style["attack_interval_s"]
+                target_phase = None
+        if enemy_health > 0 and next_strike < len(schedule) and time_s >= schedule[next_strike]["strike_time"]:
+            if not attack_is_dodged(style["dodge_chance"], tunables["windup_s"], rng):
+                player_health -= tunables["damage"]
+                damage_taken += tunables["damage"]
+            next_strike += 1
         time_s += TIME_STEP_S
-    return time_s
+    return {
+        "duration_s": round(time_s, 2),
+        "won": enemy_health <= 0,
+        "damage_taken": damage_taken,
+    }
