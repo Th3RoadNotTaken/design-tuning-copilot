@@ -55,3 +55,21 @@ def ask_for_suggestions(prompt: str) -> str:
         messages=[{"role": "user", "content": prompt}],
     )
     return "".join(block.text for block in message.content if block.type == "text")
+
+def parse_suggestions(text: str, allowed: set[str]) -> list[dict]:
+    try:
+        suggestions = json.loads(text)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"reply is not valid JSON: {error}")
+    if not isinstance(suggestions, list):
+        raise ValueError("reply must be a JSON list")
+    problems = []
+    for index, suggestion in enumerate(suggestions):
+        if not isinstance(suggestion, dict):
+            problems.append(f"item {index}: not an object")
+            continue
+        for problem in validate_suggestion(suggestion, allowed):
+            problems.append(f"item {index}: {problem}")
+    if problems:
+        raise ValueError("; ".join(problems))
+    return suggestions
