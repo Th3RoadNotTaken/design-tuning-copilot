@@ -1,5 +1,6 @@
 import json
 import anthropic
+import copy
 
 MODEL = "claude-sonnet-5-5"
 
@@ -79,3 +80,12 @@ def suggest_changes(report: dict) -> list[dict]:
     prompt = build_prompt(report, allowed)
     reply = ask_for_suggestions(prompt)
     return parse_suggestions(reply, allowed)
+
+def apply_suggestions(enemy: dict, player: dict, suggestions: list[dict]) -> tuple[dict, dict]:
+    new_enemy = copy.deepcopy(enemy)
+    new_player = copy.deepcopy(player)
+    groups = {"enemy": new_enemy, "player": new_player}
+    for suggestion in suggestions:
+        group, name = suggestion["parameter"].split(".", 1)
+        groups[group][name] = suggestion["new_value"]
+    return new_enemy, new_player
