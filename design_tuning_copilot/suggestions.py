@@ -1,4 +1,7 @@
 import json
+import anthropic
+
+MODEL = "claude-sonnet-5-5"
 
 def allowed_parameters(report: dict) -> set[str]:
     allowed = set()
@@ -43,3 +46,12 @@ def build_prompt(report: dict, allowed: set[str]) -> str:
         + "\n\nReport:\n"
         + json.dumps(report, indent=2)
     )
+
+def ask_for_suggestions(prompt: str) -> str:
+    client = anthropic.Anthropic()
+    message = client.messages.create(
+        model=MODEL,
+        max_tokens=4000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return "".join(block.text for block in message.content if block.type == "text")
