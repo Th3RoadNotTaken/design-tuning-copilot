@@ -95,3 +95,24 @@ def simulate_fight(
         "heals_used": heals_used,
         "time_spent_healing_s": round(time_spent_healing_s, 2),
     }
+
+def generate_telemetry(
+    tunables: dict,
+    player_rules: dict,
+    players_per_style: int,
+    attempts_per_player: int,
+    seed: int,
+) -> list[dict]:
+    rng = random.Random(seed)
+    rows = []
+    for style_name, style in player_rules["styles"].items():
+        for player_number in range(1, players_per_style + 1):
+            for attempt in range(1, attempts_per_player + 1):
+                result = simulate_fight(tunables, player_rules, style, rng)
+                rows.append({
+                    "player_id": f"{style_name}_{player_number}",
+                    "player_style": style_name,
+                    "attempt": attempt,
+                    **result,
+                })
+    return rows
