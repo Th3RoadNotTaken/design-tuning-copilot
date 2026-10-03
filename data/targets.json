@@ -1,0 +1,5 @@
+{
+  "difficulty": "standard",
+  "time_to_kill_s": { "min": 18.0, "max": 22.0 },
+  "success_rate": { "min": 0.30, "max": 0.40 }
+}

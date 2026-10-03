@@ -1,0 +1,8 @@
+{
+  "enemy": "brute",
+  "health": 400,
+  "damage": 25,
+  "attack_cooldown_s": 2.5,
+  "windup_s": 0.8,
+  "recovery_s": 1.2
+}
