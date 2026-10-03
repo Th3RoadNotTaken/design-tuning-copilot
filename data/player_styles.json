@@ -2,6 +2,7 @@
   "player_max_health": 500,
   "heal_time_s": 1.5,
   "heal_amount": 150,
+  "max_heals": 3,
   "styles": {
     "aggressive": {
       "dodge_chance": 0.30,

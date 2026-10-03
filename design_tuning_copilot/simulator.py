@@ -37,14 +37,14 @@ def pick_attack_phase(weights: dict, rng: random.Random) -> str:
 
 def simulate_fight(
     tunables: dict,
-    player_max_health: int,
+    player_rules: dict,
     style: dict,
     rng: random.Random,
     max_time_s: float = 120.0,
 ) -> dict:
     schedule = build_enemy_schedule(tunables, max_time_s, rng)
     enemy_health = tunables["health"]
-    player_health = player_max_health
+    player_health = player_rules["player_max_health"]
     damage_taken = 0
     next_strike = 0
     time_s = 0.0
