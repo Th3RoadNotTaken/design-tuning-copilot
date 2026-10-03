@@ -1,0 +1,25 @@
+{
+  "player_max_health": 500,
+  "heal_time_s": 1.5,
+  "heal_amount": 150,
+  "styles": {
+    "aggressive": {
+      "dodge_chance": 0.30,
+      "attack_interval_s": 0.5,
+      "damage_per_hit": 18,
+      "heal_below_health_fraction": 0.25
+    },
+    "cautious": {
+      "dodge_chance": 0.65,
+      "attack_interval_s": 0.9,
+      "damage_per_hit": 18,
+      "heal_below_health_fraction": 0.50
+    },
+    "new_player": {
+      "dodge_chance": 0.15,
+      "attack_interval_s": 1.0,
+      "damage_per_hit": 15,
+      "heal_below_health_fraction": 0.30
+    }
+  }
+}
