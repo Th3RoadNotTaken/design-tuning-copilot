@@ -1,6 +1,7 @@
 import random
 
 REFERENCE_WINDUP_S = 0.8
+TIME_STEP_S = 0.05
 
 
 def attack_is_dodged(dodge_chance: float, windup_s: float, rng: random.Random) -> bool:
@@ -22,3 +23,14 @@ def build_enemy_schedule(tunables: dict, fight_length_s: float, rng: random.Rand
             "recovery_end": recovery_end,
         })
         time_s = recovery_end
+
+def simulate_fight(tunables: dict, style: dict, max_time_s: float = 120.0) -> float:
+    enemy_health = tunables["health"]
+    time_s = 0.0
+    next_attack_s = 0.0
+    while enemy_health > 0 and time_s < max_time_s:
+        if time_s >= next_attack_s:
+            enemy_health -= style["damage_per_hit"]
+            next_attack_s += style["attack_interval_s"]
+        time_s += TIME_STEP_S
+    return time_s
