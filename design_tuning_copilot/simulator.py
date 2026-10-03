@@ -50,8 +50,25 @@ def simulate_fight(
     time_s = 0.0
     next_attack_time_s = 0.0
     target_phase = None
+    healing_until = None
+    heals_used = 0
+    time_spent_healing_s = 0.0
     while enemy_health > 0 and player_health > 0 and time_s < max_time_s:
-        if time_s >= next_attack_time_s:
+        if healing_until is not None and time_s >= healing_until:
+            player_health = min(
+                player_rules["player_max_health"],
+                player_health + player_rules["heal_amount"],
+            )
+            healing_until = None
+        if (
+            healing_until is None
+            and heals_used < player_rules["max_heals"]
+            and player_health < style["heal_below_health_fraction"] * player_rules["player_max_health"]
+        ):
+            healing_until = time_s + player_rules["heal_time_s"]
+            heals_used += 1
+            time_spent_healing_s += player_rules["heal_time_s"]
+        if healing_until is None and time_s >= next_attack_time_s:
             if target_phase is None:
                 target_phase = pick_attack_phase(style["attack_phase_weights"], rng)
             if enemy_phase_at(time_s, schedule) == target_phase:
@@ -59,7 +76,10 @@ def simulate_fight(
                 next_attack_time_s = time_s + style["attack_interval_s"]
                 target_phase = None
         if enemy_health > 0 and next_strike < len(schedule) and time_s >= schedule[next_strike]["strike_time"]:
-            if not attack_is_dodged(style["dodge_chance"], tunables["windup_s"], rng):
+            player_dodged = healing_until is None and attack_is_dodged(
+                style["dodge_chance"], tunables["windup_s"], rng
+            )
+            if not player_dodged:
                 player_health -= tunables["damage"]
                 damage_taken += tunables["damage"]
             next_strike += 1
@@ -68,4 +88,6 @@ def simulate_fight(
         "duration_s": round(time_s, 2),
         "won": enemy_health <= 0,
         "damage_taken": damage_taken,
+        "heals_used": heals_used,
+        "time_spent_healing_s": round(time_spent_healing_s, 2),
     }
