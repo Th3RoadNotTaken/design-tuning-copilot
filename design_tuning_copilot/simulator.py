@@ -53,6 +53,7 @@ def simulate_fight(
     healing_until = None
     heals_used = 0
     time_spent_healing_s = 0.0
+    damage_in_recovery = 0
     while enemy_health > 0 and player_health > 0 and time_s < max_time_s:
         if healing_until is not None and time_s >= healing_until:
             player_health = min(
@@ -74,6 +75,8 @@ def simulate_fight(
             if enemy_phase_at(time_s, schedule) == target_phase:
                 enemy_health -= player_rules["damage_per_hit"]
                 next_attack_time_s = time_s + style["attack_interval_s"]
+                if target_phase == "recovery":
+                    damage_in_recovery += player_rules["damage_per_hit"]
                 target_phase = None
         if enemy_health > 0 and next_strike < len(schedule) and time_s >= schedule[next_strike]["strike_time"]:
             player_dodged = healing_until is None and attack_is_dodged(
@@ -88,6 +91,7 @@ def simulate_fight(
         "duration_s": round(time_s, 2),
         "won": enemy_health <= 0,
         "damage_taken": damage_taken,
+        "damage_in_recovery": damage_in_recovery,
         "heals_used": heals_used,
         "time_spent_healing_s": round(time_spent_healing_s, 2),
     }
