@@ -72,7 +72,7 @@ def simulate_fight(
             if target_phase is None:
                 target_phase = pick_attack_phase(style["attack_phase_weights"], rng)
             if enemy_phase_at(time_s, schedule) == target_phase:
-                enemy_health -= style["damage_per_hit"]
+                enemy_health -= player_rules["damage_per_hit"]
                 next_attack_time_s = time_s + style["attack_interval_s"]
                 target_phase = None
         if enemy_health > 0 and next_strike < len(schedule) and time_s >= schedule[next_strike]["strike_time"]:
