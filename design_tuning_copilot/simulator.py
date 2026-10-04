@@ -35,6 +35,13 @@ def enemy_phase_at(time_s: float, schedule: list[dict]) -> str:
 def pick_attack_phase(weights: dict, rng: random.Random) -> str:
     return rng.choices(list(weights), weights=list(weights.values()))[0]
 
+def blend(start: float, end: float, skill: float) -> float:
+    return start + (end - start) * skill
+
+def attack_probability(style: dict, phase: str, skill: float) -> float:
+    chances = style["attack_probability"]
+    return blend(chances["start"][phase], chances["end"][phase], skill)
+
 def simulate_fight(
     tunables: dict,
     player_rules: dict,
