@@ -4,30 +4,39 @@
   "heal_amount": 50,
   "max_heals": 3,
   "damage_per_hit": 15,
+  "attack_gap_s": 0.8,
+  "attack_check_interval_s": 0.25,
+  "dodge_duration_s": 1.5,
+  "dodge_recovery_s": 0.5,
+  "learning": {
+    "learning_rate_min": 0.03,
+    "learning_rate_max": 0.10,
+    "skill_cap": 0.9,
+    "dodge_start_fraction": { "skill_0": 0.05, "skill_1": 0.8 },
+    "dodge_start_spread": { "skill_0": 0.2, "skill_1": 0.08 }
+  },
   "styles": {
     "aggressive": {
-      "dodge_chance": 0.30,
-      "attack_interval_s": 1.0,
       "heal_below_health_fraction": 0.25,
-      "attack_phase_weights": { "approach": 0.3, "windup": 0.3, "recovery": 0.4 }
+      "attack_probability": {
+        "start": { "approach": 0.3, "windup": 0.3, "recovery": 0.6 },
+        "end": { "approach": 0.1, "windup": 0.1, "recovery": 0.7 }
+      },
+      "dodge_weights": {
+        "start": { "none": 0.5, "approach": 0.2, "windup": 0.15, "recovery": 0.15 },
+        "end": { "none": 0.1, "approach": 0.05, "windup": 0.8, "recovery": 0.05 }
+      }
     },
     "cautious": {
-      "dodge_chance": 0.65,
-      "attack_interval_s": 1.5,
-      "heal_below_health_fraction": 0.50,
-      "attack_phase_weights": { "approach": 0.0, "windup": 0.2, "recovery": 0.8 }
-    },
-    "new_player": {
-      "dodge_chance": 0.2,
-      "attack_interval_s": 1.0,
-      "heal_below_health_fraction": 0.30,
-      "attack_phase_weights": { "approach": 0.2, "windup": 0.5, "recovery": 0.3 }
-    },
-    "new_player_b": {
-      "dodge_chance": 0.15,
-      "attack_interval_s": 0.8,
-      "heal_below_health_fraction": 0.30,
-      "attack_phase_weights": { "approach": 0.2, "windup": 0.65, "recovery": 0.15 }
+      "heal_below_health_fraction": 0.5,
+      "attack_probability": {
+        "start": { "approach": 0.0, "windup": 0.05, "recovery": 0.4 },
+        "end": { "approach": 0.0, "windup": 0.02, "recovery": 0.5 }
+      },
+      "dodge_weights": {
+        "start": { "none": 0.3, "approach": 0.2, "windup": 0.3, "recovery": 0.2 },
+        "end": { "none": 0.05, "approach": 0.0, "windup": 0.9, "recovery": 0.05 }
+      }
     }
   }
 }
