@@ -39,6 +39,17 @@ def attack_probability(style: dict, phase: str, skill: float) -> float:
     chances = style["attack_probability"]
     return blend(chances["start"][phase], chances["end"][phase], skill)
 
+def dodge_weights(style: dict, skill: float) -> dict:
+    weights = style["dodge_weights"]
+    return {
+        phase: blend(weights["start"][phase], weights["end"][phase], skill)
+        for phase in weights["start"]
+    }
+
+def pick_dodge_phase(style: dict, skill: float, rng: random.Random) -> str:
+    weights = dodge_weights(style, skill)
+    return rng.choices(list(weights), weights=list(weights.values()))[0]
+
 def simulate_fight(
     tunables: dict,
     player_rules: dict,
