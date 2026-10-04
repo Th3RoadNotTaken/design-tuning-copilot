@@ -1,12 +1,6 @@
 import random
 
-REFERENCE_WINDUP_S = 0.8
 TIME_STEP_S = 0.05
-
-
-def attack_is_dodged(dodge_chance: float, windup_s: float, rng: random.Random) -> bool:
-    effective_chance = min(0.95, dodge_chance * windup_s / REFERENCE_WINDUP_S)
-    return rng.random() < effective_chance
 
 def build_enemy_schedule(tunables: dict, fight_length_s: float, rng: random.Random) -> list[dict]:
     schedule = []
@@ -50,6 +44,29 @@ def pick_dodge_phase(style: dict, skill: float, rng: random.Random) -> str:
     weights = dodge_weights(style, skill)
     return rng.choices(list(weights), weights=list(weights.values()))[0]
 
+def plan_dodge(
+    schedule: list[dict], index: int, style: dict, learning: dict, skill: float, rng: random.Random
+) -> float | None:
+    phase = pick_dodge_phase(style, skill, rng)
+    if phase == "none":
+        return None
+    attack = schedule[index]
+    previous_end = schedule[index - 1]["recovery_end"] if index > 0 else 0.0
+    if phase == "windup":
+        fractions = learning["dodge_start_fraction"]
+        spreads = learning["dodge_start_spread"]
+        mean = blend(fractions["skill_0"], fractions["skill_1"], skill)
+        spread = blend(spreads["skill_0"], spreads["skill_1"], skill)
+        fraction = min(1.0, max(0.0, rng.gauss(mean, spread)))
+        return attack["windup_start"] + fraction * (attack["strike_time"] - attack["windup_start"])
+    if phase == "approach" or index == 0:
+        return rng.uniform(previous_end, attack["windup_start"])
+    previous = schedule[index - 1]
+    return rng.uniform(previous["strike_time"], previous["recovery_end"])
+
+def dodge_covers(start: float | None, strike_time: float, duration_s: float) -> bool:
+    return start is not None and start <= strike_time < start + duration_s
+
 def simulate_fight(
     tunables: dict,
     player_rules: dict,
@@ -59,6 +76,13 @@ def simulate_fight(
     skill: float = 0.0,
 ) -> dict:
     schedule = build_enemy_schedule(tunables, max_time_s, rng)
+    dodge_plans = [
+        plan_dodge(schedule, i, style, player_rules["learning"], skill, rng)
+        for i in range(len(schedule))
+    ]
+    dodge_starts = []
+    dodge_ready_at = 0.0
+    next_dodge = 0
     enemy_health = tunables["health"]
     player_health = player_rules["player_max_health"]
     damage_taken = 0
@@ -84,7 +108,18 @@ def simulate_fight(
             healing_until = time_s + player_rules["heal_time_s"]
             heals_used += 1
             time_spent_healing_s += player_rules["heal_time_s"]
-        if healing_until is None and time_s >= next_attack_time_s:
+        if next_dodge < len(dodge_plans):
+            planned = dodge_plans[next_dodge]
+            if planned is None:
+                next_dodge += 1
+            elif time_s >= planned:
+                if healing_until is None and time_s >= dodge_ready_at:
+                    dodge_starts.append(planned)
+                    dodge_ready_at = (
+                        planned + player_rules["dodge_duration_s"] + player_rules["dodge_recovery_s"]
+                    )
+                next_dodge += 1
+        if healing_until is None and time_s >= dodge_ready_at and time_s >= next_attack_time_s:
             phase = enemy_phase_at(time_s, schedule)
             if rng.random() < attack_probability(style, phase, skill):
                 enemy_health -= player_rules["damage_per_hit"]
@@ -94,8 +129,10 @@ def simulate_fight(
             else:
                 next_attack_time_s = time_s + player_rules["attack_check_interval_s"]
         if enemy_health > 0 and next_strike < len(schedule) and time_s >= schedule[next_strike]["strike_time"]:
-            player_dodged = healing_until is None and attack_is_dodged(
-                style["dodge_chance"], tunables["windup_s"], rng
+            strike_time = schedule[next_strike]["strike_time"]
+            player_dodged = any(
+                dodge_covers(start, strike_time, player_rules["dodge_duration_s"])
+                for start in dodge_starts
             )
             if not player_dodged:
                 player_health -= tunables["damage"]
