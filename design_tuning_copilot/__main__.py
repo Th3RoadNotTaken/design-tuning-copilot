@@ -4,8 +4,8 @@ from design_tuning_copilot.telemetry import write_telemetry_csv
 
 
 def main() -> None:
-    tunables = load_json("data/tunables.json")
-    player_rules = load_json("data/player_styles.json")
+    tunables = load_json("data/enemy.json")
+    player_rules = load_json("data/players.json")
     rows = generate_telemetry(
         tunables,
         player_rules,

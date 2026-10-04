@@ -20,10 +20,22 @@ def tune(enemy: dict, player: dict, targets: dict) -> dict:
     after = simulate_and_report(new_enemy, new_player, targets)
     return {"suggestions": suggestions, "before": before, "after": after}
 
-def format_comparison(result: dict) -> str:
-    lines = ["Suggested changes:"]
-    for s in result["suggestions"]:
-        lines.append(f"- {s['parameter']} -> {s['new_value']}: {s['reason']}")
+def format_run(result: dict) -> str:
+    lines = []
+    if not result["history"]:
+        lines.append("Already on target, no changes needed.")
+    for entry in result["history"]:
+        lines.append(f"Round {entry['round']}:")
+        for change in entry["changes"]:
+            lines.append(f"- {change['parameter']} -> {change['new_value']}: {change['reason']}")
+        lines.append("")
+    lines.append("Settings changed overall (before -> after):")
+    for group in ("enemy", "player"):
+        old = result["before"]["tunable"][group]
+        new = result["after"]["tunable"][group]
+        for name, old_value in old.items():
+            if new[name] != old_value:
+                lines.append(f"- {group}.{name}: {old_value} -> {new[name]}")
     lines.append("")
     lines.append("Overall results (before -> after):")
     for metric in ("time_to_kill_s", "success_rate"):
