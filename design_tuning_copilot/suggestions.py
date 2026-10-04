@@ -28,7 +28,7 @@ def validate_suggestion(suggestion: dict, allowed: set[str]) -> list[str]:
         problems.append("reason must be a non-empty string")
     return problems
 
-def build_prompt(report: dict, allowed: set[str]) -> str:
+def build_prompt(report: dict, allowed: set[str], history: list[dict] | None = None) -> str:
     instructions = (
         "You are a game design assistant helping tune a combat encounter. "
         "Below is a playtest report: current settings, design targets, overall results "
@@ -40,13 +40,21 @@ def build_prompt(report: dict, allowed: set[str]) -> str:
         "Reply with only a JSON list and no other text. Each item must look like: "
         '{"parameter": "enemy.health", "new_value": 350, "reason": "..."}'
     )
-    return (
+    prompt = (
         instructions
         + "\n\nAllowed parameters: "
         + ", ".join(sorted(allowed))
         + "\n\nReport:\n"
         + json.dumps(report, indent=2)
     )
+    if history:
+        prompt += (
+            "\n\nPrevious rounds. These are changes already applied and the overall "
+            "results they produced. The report above already includes them. "
+            "Do not simply undo a change without a reason, and prefer small adjustments:\n"
+            + json.dumps(history, indent=2)
+        )
+    return prompt
 
 def ask_for_suggestions(prompt: str) -> str:
     client = anthropic.Anthropic()
