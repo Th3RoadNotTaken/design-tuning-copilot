@@ -19,8 +19,8 @@
     "aggressive": {
       "heal_below_health_fraction": 0.25,
       "attack_probability": {
-        "start": { "approach": 0.3, "windup": 0.3, "recovery": 0.6 },
-        "end": { "approach": 0.1, "windup": 0.1, "recovery": 0.7 }
+        "start": { "approach": 0.05, "windup": 0.05, "recovery": 0.2 },
+        "end": { "approach": 0.03, "windup": 0.03, "recovery": 0.7 }
       },
       "dodge_weights": {
         "start": { "none": 0.5, "approach": 0.2, "windup": 0.15, "recovery": 0.15 },
@@ -31,7 +31,7 @@
       "heal_below_health_fraction": 0.5,
       "attack_probability": {
         "start": { "approach": 0.0, "windup": 0.05, "recovery": 0.4 },
-        "end": { "approach": 0.0, "windup": 0.02, "recovery": 0.5 }
+        "end": { "approach": 0.0, "windup": 0.02, "recovery": 0.7 }
       },
       "dodge_weights": {
         "start": { "none": 0.3, "approach": 0.2, "windup": 0.3, "recovery": 0.2 },

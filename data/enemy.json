@@ -5,5 +5,5 @@
   "approach_min_s": 0.0,
   "approach_max_s": 4.0,
   "windup_s": 3.5,
-  "recovery_s": 1.2
+  "recovery_s": 2.5
 }

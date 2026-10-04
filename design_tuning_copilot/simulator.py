@@ -67,6 +67,9 @@ def plan_dodge(
 def dodge_covers(start: float | None, strike_time: float, duration_s: float) -> bool:
     return start is not None and start <= strike_time < start + duration_s
 
+def skill_at_attempt(learning_rate: float, skill_cap: float, attempt: int) -> float:
+    return skill_cap * (1 - (1 - learning_rate) ** (attempt - 1))
+
 def simulate_fight(
     tunables: dict,
     player_rules: dict,
@@ -89,6 +92,7 @@ def simulate_fight(
     next_strike = 0
     time_s = 0.0
     next_attack_time_s = 0.0
+    attack_ends_at = 0.0
     healing_until = None
     heals_used = 0
     time_spent_healing_s = 0.0
@@ -113,7 +117,7 @@ def simulate_fight(
             if planned is None:
                 next_dodge += 1
             elif time_s >= planned:
-                if healing_until is None and time_s >= dodge_ready_at:
+                if healing_until is None and time_s >= dodge_ready_at and time_s >= attack_ends_at:
                     dodge_starts.append(planned)
                     dodge_ready_at = (
                         planned + player_rules["dodge_duration_s"] + player_rules["dodge_recovery_s"]
@@ -124,6 +128,7 @@ def simulate_fight(
             if rng.random() < attack_probability(style, phase, skill):
                 enemy_health -= player_rules["damage_per_hit"]
                 next_attack_time_s = time_s + player_rules["attack_gap_s"]
+                attack_ends_at = next_attack_time_s
                 if phase == "recovery":
                     damage_in_recovery += player_rules["damage_per_hit"]
             else:
@@ -155,16 +160,22 @@ def generate_telemetry(
     attempts_per_player: int,
     seed: int,
 ) -> list[dict]:
-    rng = random.Random(seed)
+    learning = player_rules["learning"]
     rows = []
     for style_name, style in player_rules["styles"].items():
         for player_number in range(1, players_per_style + 1):
+            rng = random.Random(f"{seed}-{style_name}-{player_number}")
+            learning_rate = rng.uniform(
+                learning["learning_rate_min"], learning["learning_rate_max"]
+            )
             for attempt in range(1, attempts_per_player + 1):
-                result = simulate_fight(tunables, player_rules, style, rng)
+                skill = skill_at_attempt(learning_rate, learning["skill_cap"], attempt)
+                result = simulate_fight(tunables, player_rules, style, rng, skill=skill)
                 rows.append({
                     "player_id": f"{style_name}_{player_number}",
                     "player_style": style_name,
                     "attempt": attempt,
+                    "skill": round(skill, 3),
                     **result,
                 })
     return rows
