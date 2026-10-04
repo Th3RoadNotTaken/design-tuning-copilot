@@ -32,9 +32,6 @@ def enemy_phase_at(time_s: float, schedule: list[dict]) -> str:
             return "recovery"
     return "approach"
 
-def pick_attack_phase(weights: dict, rng: random.Random) -> str:
-    return rng.choices(list(weights), weights=list(weights.values()))[0]
-
 def blend(start: float, end: float, skill: float) -> float:
     return start + (end - start) * skill
 
@@ -48,6 +45,7 @@ def simulate_fight(
     style: dict,
     rng: random.Random,
     max_time_s: float = 120.0,
+    skill: float = 0.0,
 ) -> dict:
     schedule = build_enemy_schedule(tunables, max_time_s, rng)
     enemy_health = tunables["health"]
@@ -56,7 +54,6 @@ def simulate_fight(
     next_strike = 0
     time_s = 0.0
     next_attack_time_s = 0.0
-    target_phase = None
     healing_until = None
     heals_used = 0
     time_spent_healing_s = 0.0
@@ -77,14 +74,14 @@ def simulate_fight(
             heals_used += 1
             time_spent_healing_s += player_rules["heal_time_s"]
         if healing_until is None and time_s >= next_attack_time_s:
-            if target_phase is None:
-                target_phase = pick_attack_phase(style["attack_phase_weights"], rng)
-            if enemy_phase_at(time_s, schedule) == target_phase:
+            phase = enemy_phase_at(time_s, schedule)
+            if rng.random() < attack_probability(style, phase, skill):
                 enemy_health -= player_rules["damage_per_hit"]
-                next_attack_time_s = time_s + style["attack_interval_s"]
-                if target_phase == "recovery":
+                next_attack_time_s = time_s + player_rules["attack_gap_s"]
+                if phase == "recovery":
                     damage_in_recovery += player_rules["damage_per_hit"]
-                target_phase = None
+            else:
+                next_attack_time_s = time_s + player_rules["attack_check_interval_s"]
         if enemy_health > 0 and next_strike < len(schedule) and time_s >= schedule[next_strike]["strike_time"]:
             player_dodged = healing_until is None and attack_is_dodged(
                 style["dodge_chance"], tunables["windup_s"], rng
