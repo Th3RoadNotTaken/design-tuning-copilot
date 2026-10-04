@@ -28,14 +28,39 @@ def validate_suggestion(suggestion: dict, allowed: set[str]) -> list[str]:
         problems.append("reason must be a non-empty string")
     return problems
 
+PARAMETER_NOTES = {
+    "enemy.health": "Total enemy health. More health means longer fights and more enemy strikes per fight.",
+    "enemy.damage": "Damage of each enemy strike. Compare it with player.player_max_health to see how many hits a player survives.",
+    "enemy.windup_s": "Seconds between the start of the enemy's wind-up and its strike. A longer wind-up gives players more time to learn the dodge timing; a shorter one is harder.",
+    "enemy.recovery_s": "Seconds the enemy is open after its strike. Players do most of their damage here, so a longer recovery speeds fights up.",
+    "player.player_max_health": "Player health. Higher means players survive more hits.",
+    "player.damage_per_hit": "Damage of each player attack. Higher means shorter fights.",
+    "player.heal_amount": "Health restored by each heal.",
+    "player.max_heals": "Number of heals available per attempt.",
+}
+
 def build_prompt(report: dict, allowed: set[str], history: list[dict] | None = None) -> str:
     instructions = (
-        "You are a game design assistant helping tune a combat encounter. "
-        "Below is a playtest report: current settings, design targets, overall results "
-        "and results per player style. "
-        "Suggest between 1 and 5 changes that move the results toward the targets. "
+        "You are a game design assistant tuning a souls-like boss fight. "
+        "Players should not beat the boss in their first few attempts, and should "
+        "usually win for the first time somewhere in a target attempt window. "
+        "Players get better with every attempt because they learn the boss, and each "
+        "player learns at their own speed. That learning is read-only and cannot be changed. "
+        "Below is a report from simulated playtests: current settings, design targets, "
+        "overall time to kill, and for each player type the median attempt of the first win, "
+        "the share of players who won before attempt 5, and the share who never won in 40 attempts. "
+        "Making the fight harder moves first wins later, and making it easier moves them earlier. "
+        "Shared settings affect both player types, so look at both. "
+        "Time to kill must also stay inside its target. "
+        "The report also gives the number of enemy strikes needed to kill a player and the "
+        "number of player hits needed to kill the enemy. Both have target ranges, which "
+        "limit how far enemy.damage, enemy.health, player.player_max_health and "
+        "player.damage_per_hit can move. When those are fixed by their targets, use the "
+        "other settings (wind-up, recovery, heals) to reach the first-win targets. "
+        "Suggest between 1 and 4 changes that move the results toward the targets, "
+        "preferring small steps. "
         "Only change the parameters listed under Allowed parameters. "
-        "The player styles are read-only context and cannot be changed. "
+        "Everything under read_only is context and cannot be changed. "
         "Give each suggestion a short reason that cites numbers from the report. "
         "Reply with only a JSON list and no other text. Each item must look like: "
         '{"parameter": "enemy.health", "new_value": 350, "reason": "..."}'
@@ -44,6 +69,8 @@ def build_prompt(report: dict, allowed: set[str], history: list[dict] | None = N
         instructions
         + "\n\nAllowed parameters: "
         + ", ".join(sorted(allowed))
+        + "\n\nWhat the parameters do:\n"
+        + json.dumps(PARAMETER_NOTES, indent=2)
         + "\n\nReport:\n"
         + json.dumps(report, indent=2)
     )

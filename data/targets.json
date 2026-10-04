@@ -1,5 +1,9 @@
 {
   "difficulty": "standard",
-  "time_to_kill_s": { "min": 80.0, "max": 100.0 },
-  "success_rate": { "min": 0.30, "max": 0.40 }
+  "median_first_win": { "min": 10, "max": 25 },
+  "share_before_attempt_5": { "max": 0.10 },
+  "share_never_won": { "max": 0.10 },
+  "time_to_kill_s": { "min": 80, "max": 100 },
+  "enemy_hits_to_kill_player": { "min": 7, "max": 10 },
+  "player_hits_to_kill_enemy": { "min": 15, "max": 20 }
 }

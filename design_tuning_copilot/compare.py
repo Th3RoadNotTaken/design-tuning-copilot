@@ -5,11 +5,11 @@ from design_tuning_copilot.suggestions import apply_suggestions, suggest_changes
 
 def simulate_and_report(enemy: dict, player: dict, targets: dict) -> dict:
     rows = generate_telemetry(
-        enemy,
-        player,
-        players_per_style=10,
-        attempts_per_player=3,
-        seed=42,
+    enemy,
+    player,
+    players_per_style=30,
+    attempts_per_player=40,
+    seed=42,
     )
     return build_report(rows, targets, enemy, player)
 
@@ -38,23 +38,30 @@ def format_run(result: dict) -> str:
                 lines.append(f"- {group}.{name}: {old_value} -> {new[name]}")
     lines.append("")
     lines.append("Overall results (before -> after):")
-    for metric in ("time_to_kill_s", "success_rate"):
-        before = result["before"]["overall"][metric]
+    for metric, before in result["before"]["overall"].items():
         after = result["after"]["overall"][metric]
         lines.append(
-            f"- {metric}: {before['value']:.2f} ({before['status']}) -> "
-            f"{after['value']:.2f} ({after['status']}), "
-            f"target {before['target']['min']} to {before['target']['max']}"
+            f"- {metric}: {before['value']:g} ({before['status']}) -> "
+            f"{after['value']:g} ({after['status']}), target {before['target']}"
         )
     lines.append("")
-    lines.append("Success rate by style (before -> after):")
-    for style, stats in result["before"]["by_style"].items():
-        after_rate = result["after"]["by_style"][style]["success_rate"]
-        lines.append(f"- {style}: {stats['success_rate']:.0%} -> {after_rate:.0%}")
+    lines.append("First-win results by player type (before -> after):")
+    for style, metrics in result["before"]["by_style"].items():
+        lines.append(f"{style}:")
+        for name in ("median_first_win", "share_before_attempt_5", "share_never_won"):
+            old = metrics[name]
+            new = result["after"]["by_style"][style][name]
+            lines.append(
+                f"- {name}: {old['value']} ({old['status']}) -> "
+                f"{new['value']} ({new['status']}), target {old['target']}"
+            )
     return "\n".join(lines)
 
 def all_on_target(report: dict) -> bool:
-    return all(metric["status"] == "on_target" for metric in report["overall"].values())
+    metrics = list(report["overall"].values())
+    for style_metrics in report["by_style"].values():
+        metrics += [m for key, m in style_metrics.items() if key != "players"]
+    return all(metric["status"] == "on_target" for metric in metrics)
 
 def tune_iteratively(enemy: dict, player: dict, targets: dict, max_rounds: int = 3) -> dict:
     initial = simulate_and_report(enemy, player, targets)
@@ -67,6 +74,19 @@ def tune_iteratively(enemy: dict, player: dict, targets: dict, max_rounds: int =
         enemy, player = apply_suggestions(enemy, player, suggestions)
         current = simulate_and_report(enemy, player, targets)
         history.append(
-            {"round": round_number, "changes": suggestions, "overall_after": current["overall"]}
+            {
+                "round": round_number,
+                "changes": suggestions,
+                "results_after": {
+                    "overall": current["overall"],
+                    "by_style": current["by_style"],
+                },
+            }
         )
-    return {"before": initial, "after": current, "history": history}
+    return {
+        "before": initial,
+        "after": current,
+        "history": history,
+        "final_enemy": enemy,
+        "final_player": player,
+    }
