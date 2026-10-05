@@ -6,6 +6,8 @@ The target is a learning curve. Players should rarely beat the boss in their fir
 
 All data in this repo is simulated. Nothing comes from a shipped game.
 
+![Learning curves before and after tuning](learning_curves.png)
+
 ## Status
 
 - [x] Data formats and sample data
