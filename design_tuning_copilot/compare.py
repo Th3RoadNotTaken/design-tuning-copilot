@@ -48,7 +48,7 @@ def format_run(result: dict) -> str:
     lines.append("First-win results by player type (before -> after):")
     for style, metrics in result["before"]["by_style"].items():
         lines.append(f"{style}:")
-        for name in ("median_first_win", "share_before_attempt_5", "share_never_won"):
+        for name in ("median_first_win", "share_before_attempt_5", "share_never_won", "late_win_rate"):
             old = metrics[name]
             new = result["after"]["by_style"][style][name]
             lines.append(

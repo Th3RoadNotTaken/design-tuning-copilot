@@ -21,7 +21,7 @@ def main() -> None:
     write_telemetry_csv(before_rows, "data/telemetry_before.csv")
     print(f"Wrote {len(before_rows)} fights to data/telemetry_before.csv")
 
-    result = tune_iteratively(tunables, player_rules, targets)
+    result = tune_iteratively(tunables, player_rules, targets, max_rounds=5)
     print()
     print(format_run(result))
     final_enemy = result["final_enemy"]

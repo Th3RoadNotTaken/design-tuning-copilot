@@ -71,6 +71,12 @@ def win_rate_by_attempt(rows: list[dict], style: str) -> dict[int, float]:
         wins[attempt] = wins.get(attempt, 0) + (1 if row["won"] else 0)
     return {attempt: wins[attempt] / totals[attempt] for attempt in sorted(totals)}
 
+def late_win_rate(rows: list[dict], style: str, from_attempt: int = 30) -> float | None:
+    late = [r for r in rows if r["player_style"] == style and r["attempt"] >= from_attempt]
+    if not late:
+        return None
+    return sum(1 for r in late if r["won"]) / len(late)
+
 TUNABLE_ENEMY = ("health", "damage", "windup_s", "recovery_s")
 TUNABLE_PLAYER = ("player_max_health", "damage_per_hit", "heal_amount", "max_heals")
 FIRST_WIN_METRICS = ("median_first_win", "share_before_attempt_5", "share_never_won")
@@ -85,6 +91,11 @@ def build_report(rows: list[dict], targets: dict, enemy: dict, player: dict) -> 
         summary = first_win_summary(rows, style)
         by_style[style] = {
             "players": summary["players"],
+            "late_win_rate": {
+                "value": late_win_rate(rows, style),
+                "target": targets["late_win_rate"],
+                **check_against_target(late_win_rate(rows, style), targets["late_win_rate"]),
+            },
             **{
                 name: {
                     "value": summary[name],
