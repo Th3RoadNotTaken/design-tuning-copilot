@@ -1,14 +1,14 @@
 # Design Tuning Copilot
 
-A small Python project that tunes a hard boss fight with the help of an LLM. It simulates playtests, checks the results against design targets, asks Claude for specific tuning changes with reasons, and then simulates again to show whether the changes worked.
+A small Python project that tunes a hard enemy combat encounter with the help of an LLM, the kind players only beat by learning it over many attempts. It simulates playtests, checks the results against design targets, asks Claude for specific tuning changes with reasons, and then simulates again to show whether the changes worked.
 
-The target is a learning curve. Players should rarely beat the boss in their first few attempts, and most should win for the first time somewhere between attempt 10 and 25. Players learn as they go, and each player learns at their own speed. There are two kinds of player. Aggressive players are quick to win but unreliable, so they keep losing after they have won. Cautious players take a bit longer and then stay steady.
+The target is a learning curve. Players should rarely beat the enemy in their first few attempts, and most should win for the first time somewhere between attempt 10 and 25. Players learn as they go, and each player learns at their own speed. There are two kinds of player. Aggressive players are quick to win but unreliable, so they keep losing after they have won. Cautious players take a bit longer and then stay steady.
 
 All data in this repo is simulated. Nothing comes from a shipped game.
 
 ![Per player type wins](player_view.png)
 
-The chart above averages every player. The one below shows each player separately, one row per player and one cell per attempt, with a coloured cell for a win. Aggressive players keep slipping after they have won, and cautious players settle.
+The chart above shows each player separately, one row per player and one cell per attempt, with a coloured cell for a win. Aggressive players keep slipping after they have won, and cautious players settle. The chart below averages every player before and after tuning.
 
 ![Learning curves before and after tuning](learning_curves.png)
 
@@ -45,7 +45,7 @@ The simulator seed is fixed, so the simulated data is the same on every run. The
 
 Everything lives in `data/`.
 
-- `enemy.json` holds the boss settings: health, damage, approach time range, windup and recovery.
+- `enemy.json` holds the enemy settings: health, damage, approach time range, windup and recovery.
 - `players.json` holds the shared player rules (health, damage per hit, heal time, heal amount, number of heals, attack gap, dodge duration and recovery), the learning settings, and the two player types, `aggressive` and `cautious`. Each type has its own heal threshold, volatility, and attack and dodge behavior.
 - `targets.json` holds what the designer wants. See the Targets section below.
 - `telemetry_before.csv` has one row per fight. The columns are player id, player type, attempt, skill used in that fight, duration, won, damage taken, damage dealt in the enemy's recovery window, heals used, heals interrupted and time spent healing.
@@ -61,11 +61,11 @@ The enemy repeats four phases: approach, windup, strike and recovery. The approa
 skill = cap * (1 - (1 - learning_rate) ** (attempt - 1))
 ```
 
-The cap is 0.9. Each player gets their own learning rate between 0.03 and 0.10, so some learn the boss quickly and some slowly. Both player types share that range.
+The cap is 0.9. Each player gets their own learning rate between 0.03 and 0.10, so some learn the fight quickly and some slowly. Both player types share that range.
 
 **Form on the day.** Before each fight, a player's skill gets a random nudge, up or down, so nobody plays at exactly their learned level every time. The size of the nudge depends on the type. Aggressive players have a volatility of 0.20 and cautious players have 0.04. An aggressive player will sometimes play far above their level and sometimes far below it, and a cautious player stays close to it. This is what makes aggressive results spiky from attempt to attempt.
 
-**Attacks.** Once a short gap has passed after a swing, players check every 0.25 seconds and swing with a probability that depends on the enemy's phase and on their skill. Aggressive players swing more often in every phase, including the windup and the approach, and learn to favor the recovery window. Cautious players barely swing outside recovery and learn to wait for it. Swinging commits the player, so they cannot start a dodge until the swing is over. A swing in the approach phase hits nothing, because the boss is still walking up, but it still commits the player. Swings in the windup and recovery phases deal damage. This is the cost of being reckless: wasted swings leave an aggressive player stuck in a swing when the strike arrives.
+**Attacks.** Once a short gap has passed after a swing, players check every 0.25 seconds and swing with a probability that depends on the enemy's phase and on their skill. Aggressive players swing more often in every phase, including the windup and the approach, and learn to favor the recovery window. Cautious players barely swing outside recovery and learn to wait for it. Swinging commits the player, so they cannot start a dodge until the swing is over. A swing in the approach phase hits nothing, because the enemy is still walking up, but it still commits the player. Swings in the windup and recovery phases deal damage. This is the cost of being reckless: wasted swings leave an aggressive player stuck in a swing when the strike arrives.
 
 **Dodges.** Before each enemy attack, the player decides whether to dodge, and when. They first pick a phase to dodge in, or no dodge at all, and low skill makes "no dodge" and early picks more likely. If they dodge during the windup, they also pick a start time. Beginners tend to dodge right as the windup starts, which gets them hit. With more skill they dodge in the middle to late part of the windup. A dodge protects the player for 1.5 seconds, and then they need 0.5 seconds to recover. They cannot attack during either period.
 
@@ -93,7 +93,7 @@ Set for each type:
 | Late win rate | 50% to 75% | 70% to 90% |
 | Relapse rate | 30% to 60% | 10% to 30% |
 
-The late win rate is the share of all fights in attempts 30 to 40 that were wins. Even fully trained players should not win every fight, and a reckless player should lose more often than a careful one. The relapse rate is the share of fights lost after a player's first win. Aggressive players are meant to slip back after beating the boss, so it has to be visibly higher for them, while cautious players should rarely slip back. These ranges are my own judgment calls, not taken from real data.
+The late win rate is the share of all fights in attempts 30 to 40 that were wins. Even fully trained players should not win every fight, and a reckless player should lose more often than a careful one. The relapse rate is the share of fights lost after a player's first win. Aggressive players are meant to slip back after beating the enemy, so it has to be visibly higher for them, while cautious players should rarely slip back. These ranges are my own judgment calls, not taken from real data.
 
 The two hit count targets are guardrails. They are worked out from the settings and tie together the enemy's health and damage and the player's health and damage. Without them, the model could make the fight easy or hard just by changing health.
 
@@ -150,7 +150,7 @@ The simulator is only there to make the project self contained. The rest of the 
 
 **Targets.** `targets.json` is where a designer writes down what the encounter should feel like. These numbers are about the design, not the simulator, so they carry over directly. They can also be changed or extended to match what a team cares about, including separate targets for different kinds of player.
 
-**Tunable settings.** The list of settings the model may change (`TUNABLE_ENEMY` and `TUNABLE_PLAYER` in `metrics.py`) and the short notes that explain them (`PARAMETER_NOTES` in `suggestions.py`) would be replaced with the encounter's real tuning values, such as boss health, damage, attack timings or healing item counts. Anything the model should not touch stays out of the list.
+**Tunable settings.** The list of settings the model may change (`TUNABLE_ENEMY` and `TUNABLE_PLAYER` in `metrics.py`) and the short notes that explain them (`PARAMETER_NOTES` in `suggestions.py`) would be replaced with the encounter's real tuning values, such as enemy health, damage, attack timings or healing item counts. Anything the model should not touch stays out of the list.
 
 **The simulate again step.** This is the part that does not carry over. In this project, the simulator lets the model's suggestions be tested immediately. With a real game there are two options:
 
@@ -165,7 +165,7 @@ Either way, the model's suggestions should be treated as a starting point for a 
 
 - The dodge rule, the learning curve and the two player personalities are invented, not taken from real combat data.
 - Positions are not tracked. A swing in the approach phase simply hits nothing, and swings in the other phases always connect.
-- The boss never reacts to the player. It follows a fixed cycle, so there is no punish for greedy play beyond the committed swing.
+- The enemy never reacts to the player. It follows a fixed cycle, so there is no punish for greedy play beyond the committed swing.
 - Time moves in 50 millisecond steps.
 - Learning is a single number per player. Players do not remember specific enemy attacks.
 - Only two player types exist, and they share a learning rate range. They differ in behavior and volatility, not in how fast they learn.
