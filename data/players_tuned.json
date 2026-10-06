@@ -1,8 +1,8 @@
 {
-  "player_max_health": 400,
+  "player_max_health": 410,
   "heal_time_s": 1.5,
-  "heal_amount": 30,
-  "max_heals": 2,
+  "heal_amount": 44,
+  "max_heals": 1,
   "damage_per_hit": 20,
   "attack_gap_s": 0.8,
   "attack_check_interval_s": 0.25,

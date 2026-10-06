@@ -2,23 +2,19 @@ from design_tuning_copilot.metrics import build_report
 from design_tuning_copilot.simulator import generate_telemetry
 from design_tuning_copilot.suggestions import apply_suggestions, suggest_changes
 
+PLAYERS_PER_STYLE = 60
+ATTEMPTS_PER_PLAYER = 40
+SEED = 42
 
 def simulate_and_report(enemy: dict, player: dict, targets: dict) -> dict:
     rows = generate_telemetry(
-    enemy,
-    player,
-    players_per_style=60,
-    attempts_per_player=40,
-    seed=42,
+        enemy,
+        player,
+        players_per_style=PLAYERS_PER_STYLE,
+        attempts_per_player=ATTEMPTS_PER_PLAYER,
+        seed=SEED,
     )
     return build_report(rows, targets, enemy, player)
-
-def tune(enemy: dict, player: dict, targets: dict) -> dict:
-    before = simulate_and_report(enemy, player, targets)
-    suggestions = suggest_changes(before)
-    new_enemy, new_player = apply_suggestions(enemy, player, suggestions)
-    after = simulate_and_report(new_enemy, new_player, targets)
-    return {"suggestions": suggestions, "before": before, "after": after}
 
 def fmt(value) -> str:
     if value is None:
