@@ -1,6 +1,6 @@
 # Design Tuning Copilot
 
-A small Python project that tunes a souls like boss fight with the help of an LLM. It simulates playtests, checks the results against design targets, asks Claude for specific tuning changes with reasons, and then simulates again to show whether the changes worked.
+A small Python project that tunes a hard boss fight with the help of an LLM. It simulates playtests, checks the results against design targets, asks Claude for specific tuning changes with reasons, and then simulates again to show whether the changes worked.
 
 The target is a learning curve. Players should rarely beat the boss in their first few attempts, and most should win for the first time somewhere between attempt 10 and 25. Players learn as they go, and each player learns at their own speed. There are two kinds of player. Aggressive players are quick to win but unreliable, so they keep losing after they have won. Cautious players take a bit longer and then stay steady.
 
