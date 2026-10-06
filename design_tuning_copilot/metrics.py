@@ -77,6 +77,27 @@ def late_win_rate(rows: list[dict], style: str, from_attempt: int = 30) -> float
         return None
     return sum(1 for r in late if r["won"]) / len(late)
 
+def relapse_rate(rows: list[dict], style: str) -> float | None:
+    by_player = {}
+    for row in rows:
+        if row["player_style"] == style:
+            by_player.setdefault(row["player_id"], []).append(row)
+    fights_after_first_win = 0
+    losses = 0
+    for fights in by_player.values():
+        outcomes = [f["won"] for f in sorted(fights, key=lambda f: f["attempt"])]
+        if True not in outcomes:
+            continue
+        after = outcomes[outcomes.index(True):]
+        fights_after_first_win += len(after)
+        losses += sum(1 for won in after if not won)
+    if fights_after_first_win == 0:
+        return None
+    return losses / fights_after_first_win
+
+def target_for(targets: dict, style: str, name: str) -> dict:
+    return targets.get("by_style", {}).get(style, {}).get(name, targets.get(name))
+
 TUNABLE_ENEMY = ("health", "damage", "windup_s", "recovery_s")
 TUNABLE_PLAYER = ("player_max_health", "damage_per_hit", "heal_amount", "max_heals")
 FIRST_WIN_METRICS = ("median_first_win", "share_before_attempt_5", "share_never_won")
@@ -89,22 +110,19 @@ def build_report(rows: list[dict], targets: dict, enemy: dict, player: dict) -> 
     by_style = {}
     for style in player["styles"]:
         summary = first_win_summary(rows, style)
-        by_style[style] = {
-            "players": summary["players"],
-            "late_win_rate": {
-                "value": late_win_rate(rows, style),
-                "target": targets["late_win_rate"],
-                **check_against_target(late_win_rate(rows, style), targets["late_win_rate"]),
-            },
-            **{
-                name: {
-                    "value": summary[name],
-                    "target": targets[name],
-                    **check_against_target(summary[name], targets[name]),
-                }
-                for name in FIRST_WIN_METRICS
-            },
+        values = {
+            **{name: summary[name] for name in FIRST_WIN_METRICS},
+            "late_win_rate": late_win_rate(rows, style),
+            "relapse_rate": relapse_rate(rows, style),
         }
+        by_style[style] = {"players": summary["players"]}
+        for name, value in values.items():
+            target = target_for(targets, style, name)
+            by_style[style][name] = {
+                "value": value,
+                "target": target,
+                **check_against_target(value, target),
+            }
     enemy_hits = hits_to_kill(player["player_max_health"], enemy["damage"])
     player_hits = hits_to_kill(enemy["health"], player["damage_per_hit"])
     return {

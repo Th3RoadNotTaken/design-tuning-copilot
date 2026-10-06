@@ -4,6 +4,6 @@
   "damage": 60,
   "approach_min_s": 0.0,
   "approach_max_s": 4.0,
-  "windup_s": 2.5,
-  "recovery_s": 1.6
+  "windup_s": 2.3,
+  "recovery_s": 1.5
 }

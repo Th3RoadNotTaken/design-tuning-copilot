@@ -18,17 +18,19 @@
   "styles": {
     "aggressive": {
       "heal_below_health_fraction": 0.25,
+      "volatility": 0.2,
       "attack_probability": {
-        "start": { "approach": 0.05, "windup": 0.05, "recovery": 0.2 },
-        "end": { "approach": 0.03, "windup": 0.03, "recovery": 0.7 }
+        "start": { "approach": 0.15, "windup": 0.15, "recovery": 0.2 },
+        "end": { "approach": 0.08, "windup": 0.08, "recovery": 0.7 }
       },
       "dodge_weights": {
         "start": { "none": 0.5, "approach": 0.2, "windup": 0.15, "recovery": 0.15 },
-        "end": { "none": 0.1, "approach": 0.05, "windup": 0.8, "recovery": 0.05 }
+        "end": { "none": 0.2, "approach": 0.05, "windup": 0.7, "recovery": 0.05 }
       }
     },
     "cautious": {
       "heal_below_health_fraction": 0.5,
+      "volatility": 0.04,
       "attack_probability": {
         "start": { "approach": 0.0, "windup": 0.05, "recovery": 0.4 },
         "end": { "approach": 0.0, "windup": 0.02, "recovery": 0.7 }

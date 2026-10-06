@@ -7,7 +7,7 @@ def simulate_and_report(enemy: dict, player: dict, targets: dict) -> dict:
     rows = generate_telemetry(
     enemy,
     player,
-    players_per_style=30,
+    players_per_style=60,
     attempts_per_player=40,
     seed=42,
     )
@@ -19,6 +19,14 @@ def tune(enemy: dict, player: dict, targets: dict) -> dict:
     new_enemy, new_player = apply_suggestions(enemy, player, suggestions)
     after = simulate_and_report(new_enemy, new_player, targets)
     return {"suggestions": suggestions, "before": before, "after": after}
+
+def fmt(value) -> str:
+    if value is None:
+        return "n/a"
+    if isinstance(value, float):
+        return f"{value:.2f}"
+    return str(value)
+
 
 def format_run(result: dict) -> str:
     lines = []
@@ -41,19 +49,25 @@ def format_run(result: dict) -> str:
     for metric, before in result["before"]["overall"].items():
         after = result["after"]["overall"][metric]
         lines.append(
-            f"- {metric}: {before['value']:g} ({before['status']}) -> "
-            f"{after['value']:g} ({after['status']}), target {before['target']}"
+            f"- {metric}: {fmt(before['value'])} ({before['status']}) -> "
+            f"{fmt(after['value'])} ({after['status']}), target {before['target']}"
         )
     lines.append("")
-    lines.append("First-win results by player type (before -> after):")
+    lines.append("Results by player type (before -> after):")
     for style, metrics in result["before"]["by_style"].items():
         lines.append(f"{style}:")
-        for name in ("median_first_win", "share_before_attempt_5", "share_never_won", "late_win_rate"):
+        for name in (
+            "median_first_win",
+            "share_before_attempt_5",
+            "share_never_won",
+            "late_win_rate",
+            "relapse_rate",
+        ):
             old = metrics[name]
             new = result["after"]["by_style"][style][name]
             lines.append(
-                f"- {name}: {old['value']} ({old['status']}) -> "
-                f"{new['value']} ({new['status']}), target {old['target']}"
+                f"- {name}: {fmt(old['value'])} ({old['status']}) -> "
+                f"{fmt(new['value'])} ({new['status']}), target {old['target']}"
             )
     return "\n".join(lines)
 

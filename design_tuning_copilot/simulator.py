@@ -75,9 +75,10 @@ def simulate_fight(
     player_rules: dict,
     style: dict,
     rng: random.Random,
-    max_time_s: float = 120.0,
+    max_time_s: float = 600.0,
     skill: float = 0.0,
 ) -> dict:
+    # max_time_s is only a safety stop for broken setups, not a design limit.
     schedule = build_enemy_schedule(tunables, max_time_s, rng)
     dodge_plans = [
         plan_dodge(schedule, i, style, player_rules["learning"], skill, rng)
@@ -94,7 +95,9 @@ def simulate_fight(
     next_attack_time_s = 0.0
     attack_ends_at = 0.0
     healing_until = None
+    heal_planned_at = None
     heals_used = 0
+    heals_interrupted = 0
     time_spent_healing_s = 0.0
     damage_in_recovery = 0
     while enemy_health > 0 and player_health > 0 and time_s < max_time_s:
@@ -104,14 +107,24 @@ def simulate_fight(
                 player_health + player_rules["heal_amount"],
             )
             healing_until = None
-        if (
+        needs_heal = (
             healing_until is None
             and heals_used < player_rules["max_heals"]
             and player_health < style["heal_below_health_fraction"] * player_rules["player_max_health"]
-        ):
+        )
+        if not needs_heal:
+            heal_planned_at = None
+        elif heal_planned_at is None:
+            if next_strike < len(schedule):
+                available_s = max(0.0, schedule[next_strike]["strike_time"] - time_s)
+            else:
+                available_s = 0.0
+            heal_planned_at = time_s + (1 - skill) * rng.uniform(0, available_s)
+        if heal_planned_at is not None and time_s >= heal_planned_at and time_s >= dodge_ready_at:
             healing_until = time_s + player_rules["heal_time_s"]
             heals_used += 1
             time_spent_healing_s += player_rules["heal_time_s"]
+            heal_planned_at = None
         if next_dodge < len(dodge_plans):
             planned = dodge_plans[next_dodge]
             if planned is None:
@@ -126,7 +139,9 @@ def simulate_fight(
         if healing_until is None and time_s >= dodge_ready_at and time_s >= next_attack_time_s:
             phase = enemy_phase_at(time_s, schedule)
             if rng.random() < attack_probability(style, phase, skill):
-                enemy_health -= player_rules["damage_per_hit"]
+                # The boss is still walking up during approach, so the swing whiffs.
+                if phase != "approach":
+                    enemy_health -= player_rules["damage_per_hit"]
                 next_attack_time_s = time_s + player_rules["attack_gap_s"]
                 attack_ends_at = next_attack_time_s
                 if phase == "recovery":
@@ -142,6 +157,10 @@ def simulate_fight(
             if not player_dodged:
                 player_health -= tunables["damage"]
                 damage_taken += tunables["damage"]
+                if healing_until is not None:
+                    time_spent_healing_s -= healing_until - time_s
+                    healing_until = None
+                    heals_interrupted += 1
             next_strike += 1
         time_s += TIME_STEP_S
     return {
@@ -150,6 +169,7 @@ def simulate_fight(
         "damage_taken": damage_taken,
         "damage_in_recovery": damage_in_recovery,
         "heals_used": heals_used,
+        "heals_interrupted": heals_interrupted,
         "time_spent_healing_s": round(time_spent_healing_s, 2),
     }
 
@@ -169,7 +189,10 @@ def generate_telemetry(
                 learning["learning_rate_min"], learning["learning_rate_max"]
             )
             for attempt in range(1, attempts_per_player + 1):
-                skill = skill_at_attempt(learning_rate, learning["skill_cap"], attempt)
+                base_skill = skill_at_attempt(learning_rate, learning["skill_cap"], attempt)
+                # Form on the day: a random swing around the learned skill.
+                skill = base_skill + rng.gauss(0, style["volatility"])
+                skill = max(0.0, min(1.0, skill))
                 result = simulate_fight(tunables, player_rules, style, rng, skill=skill)
                 rows.append({
                     "player_id": f"{style_name}_{player_number}",
