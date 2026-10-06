@@ -6,6 +6,10 @@ The target is a learning curve. Players should rarely beat the boss in their fir
 
 All data in this repo is simulated. Nothing comes from a shipped game.
 
+![Per player type wins](player_view.png)
+
+The chart above averages every player. The one below shows each player separately, one row per player and one cell per attempt, with a coloured cell for a win. Aggressive players keep slipping after they have won, and cautious players settle.
+
 ![Learning curves before and after tuning](learning_curves.png)
 
 ## Status
@@ -33,7 +37,7 @@ This does the following:
 1. Simulates 60 players per type for 40 attempts each (4,800 fights) and writes `data/telemetry_before.csv`.
 2. Asks the LLM for tuning changes, applies them, and simulates again, for up to eight rounds or until every target is met.
 3. Prints each round's changes with reasons, plus a before and after summary.
-4. Writes `data/telemetry_after.csv`, the tuned settings (`data/enemy_tuned.json` and `data/players_tuned.json`), and `learning_curves.png`.
+4. Writes `data/telemetry_after.csv`, the tuned settings (`data/enemy_tuned.json` and `data/players_tuned.json`), `learning_curves.png` and `player_view.png`.
 
 The simulator seed is fixed, so the simulated data is the same on every run. The LLM's suggestions can differ between runs, so the tuned settings can too.
 
@@ -116,25 +120,26 @@ Starting settings were enemy health 400, damage 50, windup 3.5 s and recovery 2.
 
 The player also needed 27 hits to kill the enemy, which is above the guardrail of 20.
 
-One tuning run reached on target settings in three rounds. The enemy's damage went to 60, its windup to 2.3 s and its recovery to 1.5 s. The player's damage per hit went to 20, heal amount to 30, and the number of heals to two.
+The run shown in the charts reached on target settings in six rounds. The enemy's damage went to 58, its windup to 2.0 s and its recovery to 1.5 s. The player's health went to 410, damage per hit to 20, heal amount to 44, and the number of heals to one.
 
 | Metric | Aggressive | Cautious |
 | --- | --- | --- |
-| Median first win | attempt 10 | attempt 13 |
-| Win before attempt 5 | 8% | 0% |
-| Late win rate (attempts 30 to 40) | 61% | 88% |
-| Relapse rate | 50% | 20% |
+| Median first win | attempt 10 | attempt 11 |
+| Win before attempt 5 | 3% | 2% |
+| Late win rate (attempts 30 to 40) | 52% | 88% |
+| Relapse rate | 54% | 23% |
 
-Time to kill went from 80.6 s to 92.2 s, enemy hits to kill the player went from 8 to 7, and player hits to kill the enemy came down from 27 to 20. Every target was met.
+Time to kill went from 80.6 s to 95.7 s, enemy hits to kill the player stayed at 8, and player hits to kill the enemy came down from 27 to 20. Every target was met.
 
-The loop does not always get there. An earlier run of the same setup with 30 players per type used all eight rounds and finished with two targets missed by a hair: time to kill at 100.4 s against a cap of 100, and the aggressive median first win at 9.5 against a floor of 10.
+The loop does not always get there. Across three runs with 60 players per type, two reached every target (in three and in six rounds), and one used all eight rounds and finished with two aggressive targets missed by a small margin: a median first win of 9.5 against a floor of 10, and 12% of players winning before attempt 5 against a cap of 10%. An earlier run with 30 players per type also used all eight rounds and missed two targets by a hair.
 
 ## What I learned
 
 - **The model's predictions are often wrong, so simulating again matters.** In several runs, the model's first round fixed the hit count guardrails by lowering enemy health or raising player damage. It said its other changes would balance this out, but early wins jumped to between 67% and 93%. The simulator caught it and the next round corrected it.
 - **Different runs find different valid settings.** One run kept enemy health at 300 and changed windup and heals. Another cut the number of heals to one and raised player damage. The targets describe what good looks like, not one answer.
 - **Making two player types look different took several tries.** My first attempt was to add a random swing to each player's skill. It barely changed the averages, because both types faced the same number of hits. Making aggressive players swing more in every phase then made them easier, not riskier, because those swings were free damage. Only when swings in the approach phase stopped dealing damage did aggressive players start taking more hits, winning later and losing more after a win. Per type targets for late win rate and relapse rate then made it possible to describe the difference.
-- **A noisy measurement makes the tuner chase noise.** With 30 players per type, medians move in half attempt steps and small setting changes sometimes swung a metric by 20 points or more. The model kept correcting for what was partly noise, and a run could run out of rounds with two targets missed by tiny margins. Doubling the players to 60 settled it.
+- **A noisy measurement makes the tuner chase noise.** With 30 players per type, medians move in half attempt steps and small setting changes sometimes swung a metric by 20 points or more. The model kept correcting for what was partly noise, and a run could run out of rounds with two targets missed by tiny margins. Doubling the players to 60 helped a lot, though one of three runs at that size still ended with two small misses.
+- **The fight has cliffs and flat spots.** In one run the model cut the windup from 2.2 s to 2.1 s, and the aggressive late win rate fell from about 0.6 to 0.27 while time to kill jumped past its cap. In another run, raising the heal amount from 40 to 44 changed nothing at all, because the same fights played out the same way. A dodge plus its recovery takes 2.0 s, so I suspect the cliff is related, but I have not tested that. Small steps do not always give small changes, and the model found the edges by falling off them.
 - **Results vary from run to run.** The model is not deterministic, so the same targets can give different settings and sometimes a different outcome.
 
 ## Using this with a real game
